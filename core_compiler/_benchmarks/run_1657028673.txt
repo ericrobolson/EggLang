@@ -1,0 +1,6 @@
+{
+    "Print world": Telemetry {
+        name: "Print world",
+        duration: 300ns,
+    },
+}
