@@ -1,0 +1,80 @@
+
+;;
+;; Built in methods + macros that are executed at compile time
+
+;;; Takes anything on the stack and duplicates it.
+; fn [Any] dup [Any Any] 
+
+;;; Takes anything on the stack and prints it
+; fn [Any] print
+
+;; End Macros
+;;
+
+enum Color {
+    Red,
+    Blue,
+    Green,
+    RGBA [Number Number Number Number]
+}
+
+; Functions are composed of:
+; - input stack
+; - - A list of types that must exist on the stack
+; - - An identifier for the function
+; - - A list of types that must be returned on the stack
+; Functions have no return statements
+fn [Color] print [] {
+    match 
+        Red -> "red"
+        Blue -> "blue"
+        Green -> "green"
+        RGBA rgba -> map rgba to_string end  
+    end
+
+    print
+}
+
+fn print(c: Color) {
+    (print (to_string c))
+}
+
+fn add_mul(a: Number, b: Number): Number {
+    (* 54 (+ a b))
+}
+
+fn map(f: Fn(Number, Number) = (Number), list: [Number]) = ([Number]) {
+    
+}
+
+
+(fn print (Color: color)
+    (match color 
+        ((Red) (print "red"))
+    ))
+
+fn [Number] print [] {
+    to_string print
+}
+
+;; [Any] to_string [String] is a built in method 
+
+fn [a: Number, b: Number] added [Number] {
+    a b +
+}
+
+
+fn [] main [Number] [
+    ;; reversed and evaluated to:
+    ;; 2 1 + = a
+    ;; sets 'a' to '3'
+    a = + 1 2
+
+    ;; reversed and evaluates to
+    ;; a to-string , "a = " join. print
+    print "a = ${a}"
+
+    0
+]
+
+
