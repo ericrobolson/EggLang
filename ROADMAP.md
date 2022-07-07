@@ -9,5 +9,6 @@
 - [ ] As a core developer, I need to decide whether to use types or not
 
 
+
 ## Benchmarks
 - [ ] As a developer, I want to extend `benchy` to support the number of calls made.

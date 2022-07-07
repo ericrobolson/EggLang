@@ -17,11 +17,31 @@ pub struct Token {
 pub enum TokenKind {
     String(String),
 }
+impl TokenKind {
+    pub fn token_type(&self) -> TokenType {
+        match self {
+            TokenKind::String(_) => TokenType::String,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum TokenType {
+    String,
+}
 
 /// An error that occured while tokenizing.
 #[derive(Debug, Clone, PartialEq)]
 pub enum TokenizerErr {
     StringNotStarted,
+    UnclosedString,
+    Type(TypeError),
+    StackUnderflow,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum TypeError {
+    WrongType { got: State, expected: TokenType },
 }
 
 /// State for tokenizer.
@@ -61,9 +81,11 @@ impl Tokenizer {
     pub fn make_string(&mut self) -> Result<(), Err> {
         match self.state_stack.pop() {
             Some(state) => match state {
-                State::String { start, contents } => {
+                State::String(StringState { start, contents }) => {
+                    let contents = contents.trim();
+
                     self.tokens.push(Token {
-                        kind: TokenKind::String(contents),
+                        kind: TokenKind::String(contents.into()),
                         location: start,
                     });
 
@@ -99,18 +121,51 @@ impl Tokenizer {
         c
     }
 
+    fn pop_string_state(&mut self) -> Result<StringState, Err> {
+        match self.pop_state() {
+            Some(state) => {
+                //
+                match state {
+                    State::String(state) => Ok(state),
+                    state => Err(self.make_err(TokenizerErr::Type(TypeError::WrongType {
+                        got: state,
+                        expected: TokenType::String,
+                    }))),
+                }
+            }
+            None => Err(self.make_err(TokenizerErr::StackUnderflow)),
+        }
+    }
+
     /// Creates a new tokenizer.
     pub fn parse<'a>(contents: &'a str, path: PathBuf) -> Result<Success, Err> {
         Benchy::time("Tokenizer::parse");
 
+        const ESCAPE_CHARACTER: char = '\\';
+        const QUOTE: char = '\"';
+
         let mut tokenizer = Self::load(contents, path);
 
         // TODO: start strings.
-
+        let mut prev_char = None;
         while let Some(c) = tokenizer.next_character() {
-            if c == '\"' {
-                if tokenizer.is_making_string() {}
+            let is_quote = c == QUOTE;
+            let prev_char_is_escape = Some(ESCAPE_CHARACTER) == prev_char;
+
+            if tokenizer.is_making_string() {
+                if is_quote && !prev_char_is_escape {
+                    todo!("End string")
+                } else {
+                    todo!("Add to string")
+                }
+            } else if is_quote {
+                todo!("Make new string")
+            } else {
+                todo!("What to do after?");
+                todo!("Make identifiers");
             }
+
+            prev_char = Some(c);
         }
 
         tokenizer.finalize()
@@ -120,17 +175,41 @@ impl Tokenizer {
     fn finalize(self) -> Result<Success, Err> {
         Ok(self.tokens)
     }
+
+    /// Creates an error of the given kind.
+    fn make_err(&self, kind: TokenizerErr) -> error::Error<TokenizerErr> {
+        error::Error {
+            kind,
+            location: self.location.clone(),
+        }
+    }
+
+    /// Pops the current state off the stack.
+    fn pop_state(&mut self) -> Option<State> {
+        self.state_stack.pop()
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
-enum State {
-    String { start: Location, contents: String },
+pub enum State {
+    String(StringState),
+}
+#[derive(Clone, Debug, PartialEq)]
+pub struct StringState {
+    start: Location,
+    contents: String,
 }
 
 impl State {
+    fn token_type(&self) -> TokenType {
+        match self {
+            State::String(_) => TokenType::String,
+        }
+    }
+
     pub fn is_making_string(&self) -> bool {
         match self {
-            State::String { start, contents } => true,
+            State::String(StringState { start, contents }) => true,
         }
     }
 }
@@ -139,6 +218,77 @@ impl State {
 mod tests {
     use super::*;
     use std::path::PathBuf;
+
+    #[test]
+    fn pop_string_state_underflow_returns_err() {
+        let contents = "     ";
+        let path = PathBuf::from("wutup");
+        let mut tokenizer = Tokenizer::load(contents, path.clone());
+
+        let expected = Err(tokenizer.make_err(TokenizerErr::StackUnderflow));
+        assert_eq!(expected, tokenizer.pop_string_state());
+    }
+
+    #[test]
+    fn pop_string_state_returns_top_state() {
+        let contents = "     ";
+        let path = PathBuf::from("wutup");
+        let mut tokenizer = Tokenizer::load(contents, path.clone());
+
+        let string_state = StringState {
+            start: tokenizer.location.clone(),
+            contents: "jajajaja".into(),
+        };
+        let state = State::String(string_state.clone());
+
+        tokenizer.state_stack.push(state.clone());
+
+        assert_eq!(string_state, tokenizer.pop_string_state().unwrap());
+    }
+
+    #[test]
+    fn pop_state_nothing_returns_none() {
+        let contents = "     ";
+        let path = PathBuf::from("wutup");
+        let mut tokenizer = Tokenizer::load(contents, path.clone());
+
+        let expected = None;
+        assert_eq!(expected, tokenizer.pop_state());
+    }
+
+    #[test]
+    fn make_err_returns_error() {
+        let contents = "     ";
+        let path = PathBuf::from("wutup");
+        let tokenizer = Tokenizer::load(contents, path.clone());
+        let actual = tokenizer.make_err(TokenizerErr::StackUnderflow);
+
+        assert_eq!(
+            error::Error::<TokenizerErr> {
+                kind: TokenizerErr::StackUnderflow,
+                location: tokenizer.location.clone()
+            },
+            actual
+        );
+    }
+
+    #[test]
+    fn pop_state_something_returns_something() {
+        let contents = "     ";
+        let path = PathBuf::from("wutup");
+        let mut tokenizer = Tokenizer::load(contents, path.clone());
+
+        let state = State::String(StringState {
+            start: tokenizer.location.clone(),
+            contents: "jajajaja".into(),
+        });
+
+        tokenizer.state_stack.push(state.clone());
+
+        let expected = Some(state.clone());
+
+        assert_eq!(expected, tokenizer.pop_state());
+    }
 
     #[test]
     fn make_string_returns_err_when_no_string() {
@@ -159,12 +309,14 @@ mod tests {
         let path = PathBuf::from("wutup");
         let mut tokenizer = Tokenizer::load(contents, path.clone());
 
-        todo!("Need to start string");
-        todo!("Maybe convert to FSM where you can easily pop things?");
+        let state = State::String(StringState {
+            start: tokenizer.location.clone(),
+            contents: "jajajaja".into(),
+        });
 
         assert_eq!(Ok(()), tokenizer.make_string());
         let expected = vec![Token {
-            kind: TokenKind::String("hello world".into()),
+            kind: TokenKind::String(" \"hello world\"    ".into()),
             location: Location {
                 line: 0,
                 column: 0,
@@ -180,10 +332,13 @@ mod tests {
         let contents = "     ";
         let path = PathBuf::from("wutup");
         let mut tokenizer = Tokenizer::load(contents, path.clone());
-        tokenizer.state_stack.push(State::String {
+
+        let state = State::String(StringState {
             start: tokenizer.location.clone(),
-            contents: String::new(),
+            contents: "jajajaja".into(),
         });
+
+        tokenizer.state_stack.push(state);
 
         assert_eq!(true, tokenizer.is_making_string());
     }
@@ -285,6 +440,7 @@ mod tests {
 
     #[test]
     fn tokenize_single_string() {
+        todo!();
         let contents = "\"hello world!\"";
         let path = PathBuf::from("HelloPath");
 
