@@ -1,5 +1,5 @@
 [package]
-name = "core_compiler"
+name = "egg_lang"
 version = "0.1.0"
 edition = "2021"
 
