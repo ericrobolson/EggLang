@@ -103,9 +103,9 @@ fn is_symbol(c: char) -> bool {
 }
 
 impl Tokenizer {
-    /// Parse the given contents into a series of tokens.
-    pub fn parse<'a>(contents: &'a str, path: PathBuf) -> Result<Success, Err> {
-        Benchy::time("Tokenizer::parse");
+    /// tokenize the given contents into a series of tokens.
+    pub fn tokenize<'a>(contents: &'a str, path: PathBuf) -> Result<Success, Err> {
+        Benchy::time("Tokenizer::tokenize");
 
         let mut tokenizer = Self::load(contents, path);
 
@@ -117,6 +117,7 @@ impl Tokenizer {
             let prev_char_is_escape = Some(ESCAPE_CHARACTER) == prev_char;
             let is_newline = c == NEW_LINE;
             let is_symbol = is_symbol(c);
+            let is_making_comment = tokenizer.is_making_comment();
             let is_terminal_character = is_symbol | is_whitespace || is_comment || is_newline;
 
             // Handle making a string
@@ -130,7 +131,7 @@ impl Tokenizer {
                 }
             }
             // End the string
-            else if is_quote {
+            else if is_quote && !is_making_comment {
                 if tokenizer.is_making_identifier() {
                     tokenizer.make_identifier()?;
                 }
@@ -143,22 +144,29 @@ impl Tokenizer {
                 if is_whitespace && tokenizer.state_stack.is_empty() {
                     // do nothing
                 } else {
+                    let mut skip_symbol = false;
+
                     if tokenizer.is_making_identifier() {
                         tokenizer.make_identifier()?;
                     }
 
-                    if is_comment {
+                    if is_comment && !is_making_comment {
                         tokenizer.state_stack.push(State::Comment(CommentState {
                             start: tokenizer.location.clone(),
                             contents: String::new(),
                         }));
+                    } else if is_making_comment {
+                        if !is_comment {
+                            tokenizer.push_char_on_comment(c)?;
+                            skip_symbol = true;
+                        }
                     }
 
                     if is_newline && tokenizer.is_making_comment() {
                         tokenizer.make_comment()?;
                     }
 
-                    if is_symbol {
+                    if is_symbol && !skip_symbol {
                         tokenizer.tokens.push(Token {
                             kind: TokenKind::Symbol(c),
                             location: tokenizer.location.clone(),
@@ -170,9 +178,7 @@ impl Tokenizer {
                 state.contents.push(c);
                 tokenizer.state_stack.push(State::Identifier(state));
             } else if tokenizer.is_making_comment() {
-                let mut state = tokenizer.pop_comment_state()?;
-                state.contents.push(c);
-                tokenizer.state_stack.push(State::Comment(state));
+                tokenizer.push_char_on_comment(c)?;
             } else {
                 // Start identifier
                 tokenizer
@@ -190,6 +196,13 @@ impl Tokenizer {
         }
 
         tokenizer.finalize()
+    }
+
+    fn push_char_on_comment(&mut self, c: char) -> Result<(), Err> {
+        let mut state = self.pop_comment_state()?;
+        state.contents.push(c);
+        self.state_stack.push(State::Comment(state));
+        Ok(())
     }
 
     /// Returns whether the tokenizer is making a string or not.
@@ -222,10 +235,11 @@ impl Tokenizer {
     /// Loads the given contents into the tokenizer.
     fn load<'a>(contents: &'a str, path: PathBuf) -> Self {
         let contents = contents.replace("\r\n", "\n").replace("\r", "\n");
-
+        let mut location = Location::new(path);
+        location.line = 1;
         Self {
             tokens: vec![],
-            location: Location::new(path),
+            location,
             next_char_index: 0,
             original_contents: contents,
             state_stack: vec![],
@@ -268,7 +282,7 @@ impl Tokenizer {
 
                     let contents = contents.replace("\\\"", "\"");
 
-                    // Try to parse number
+                    // Try to tokenize number
                     match contents.parse::<f64>() {
                         Ok(n) => {
                             self.tokens.push(Token {
@@ -480,11 +494,11 @@ mod tests {
 
         tokenizer.increment_location('a');
         assert_eq!(1, tokenizer.location.column);
-        assert_eq!(0, tokenizer.location.line);
+        assert_eq!(1, tokenizer.location.line);
 
         tokenizer.increment_location('\n');
         assert_eq!(0, tokenizer.location.column);
-        assert_eq!(1, tokenizer.location.line);
+        assert_eq!(2, tokenizer.location.line);
     }
 
     #[test]
@@ -568,7 +582,7 @@ mod tests {
         let path = PathBuf::from("WUT");
         let actual = Tokenizer::load(contents, path.clone());
         let expected = Tokenizer {
-            location: Location::new(path),
+            location: Location::new(path).increment_line(),
             state_stack: vec![],
             tokens: vec![],
             original_contents: "\n \n \n \n \n \n".into(),
@@ -583,7 +597,7 @@ mod tests {
         let path = PathBuf::from("WUT");
         let actual = Tokenizer::load(contents, path.clone());
         let expected = Tokenizer {
-            location: Location::new(path),
+            location: Location::new(path).increment_line(),
             state_stack: vec![],
             tokens: vec![],
             original_contents: "\n \n \n \n".into(),
@@ -625,7 +639,7 @@ mod tests {
         let expected = vec![Token {
             kind: TokenKind::Comment("jajajaja".into()),
             location: Location {
-                line: 0,
+                line: 1,
                 column: 0,
                 path: path,
             },
@@ -664,7 +678,7 @@ mod tests {
         let expected = vec![Token {
             kind: TokenKind::Identifier("jajajaja".into()),
             location: Location {
-                line: 0,
+                line: 1,
                 column: 0,
                 path: path,
             },
@@ -703,7 +717,7 @@ mod tests {
         let expected = vec![Token {
             kind: TokenKind::String("jajajaja".into()),
             location: Location {
-                line: 0,
+                line: 1,
                 column: 0,
                 path: path,
             },
@@ -736,21 +750,21 @@ mod tests {
 
         assert_eq!(1, tokenizer.next_char_index);
         assert_eq!(1, tokenizer.location.column);
-        assert_eq!(0, tokenizer.location.line);
+        assert_eq!(1, tokenizer.location.line);
 
         assert_eq!(Some('\n'), tokenizer.next_character());
         tokenizer.increment_location('\n');
 
         assert_eq!(2, tokenizer.next_char_index);
         assert_eq!(0, tokenizer.location.column);
-        assert_eq!(1, tokenizer.location.line);
+        assert_eq!(2, tokenizer.location.line);
 
         assert_eq!(Some('b'), tokenizer.next_character());
         tokenizer.increment_location('b');
 
         assert_eq!(3, tokenizer.next_char_index);
         assert_eq!(1, tokenizer.location.column);
-        assert_eq!(1, tokenizer.location.line);
+        assert_eq!(2, tokenizer.location.line);
     }
 
     #[test]
@@ -765,7 +779,7 @@ mod tests {
 
         assert_eq!(1, tokenizer.next_char_index);
         assert_eq!(1, tokenizer.location.column);
-        assert_eq!(0, tokenizer.location.line);
+        assert_eq!(1, tokenizer.location.line);
     }
 
     #[test]
@@ -777,19 +791,19 @@ mod tests {
         assert_eq!(None, tokenizer.next_character());
         assert_eq!(0, tokenizer.next_char_index);
         assert_eq!(0, tokenizer.location.column);
-        assert_eq!(0, tokenizer.location.line);
+        assert_eq!(1, tokenizer.location.line);
     }
 
     #[test]
-    fn parse_comment_ends_with_end_of_file() {
+    fn tokenize_comment_ends_with_end_of_file() {
         let contents = ";foo";
         let path = PathBuf::from("HelloPath");
 
-        let actual = Tokenizer::parse(contents, path.clone());
+        let actual = Tokenizer::tokenize(contents, path.clone());
         let expected = Ok(vec![Token {
             kind: TokenKind::Comment("foo".into()),
             location: Location {
-                line: 0,
+                line: 1,
                 column: 0,
                 path,
             },
@@ -798,16 +812,181 @@ mod tests {
     }
 
     #[test]
-    fn parse_comment_ends_with_newline() {
+    fn tokenize_comment_long_comment_ends_with_end_of_file() {
+        let contents = ";foo is a bar foo foo foo";
+        let path = PathBuf::from("HelloPath");
+
+        let actual = Tokenizer::tokenize(contents, path.clone());
+        let expected = Ok(vec![Token {
+            kind: TokenKind::Comment("foo is a bar foo foo foo".into()),
+            location: Location {
+                line: 1,
+                column: 0,
+                path,
+            },
+        }]);
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn tokenize_comment_multiple_comments() {
+        let contents = ";foo is a bar foo foo foo\n;foo is a bar foo foo foo";
+        let path = PathBuf::from("HelloPath");
+
+        let actual = Tokenizer::tokenize(contents, path.clone());
+        let expected = Ok(vec![
+            Token {
+                kind: TokenKind::Comment("foo is a bar foo foo foo".into()),
+                location: Location {
+                    line: 1,
+                    column: 0,
+                    path: path.clone(),
+                },
+            },
+            Token {
+                kind: TokenKind::Comment("foo is a bar foo foo foo".into()),
+                location: Location {
+                    line: 2,
+                    column: 0,
+                    path,
+                },
+            },
+        ]);
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn tokenize_complex_comments2() {
+        let contents = r#"
+;
+;;; Takes anything on the stack and duplicates it.
+; fn [Any] dup [Any Any] 
+        "#;
+
+        let path = PathBuf::from("HelloPath");
+
+        let actual = Tokenizer::tokenize(contents, path.clone());
+        let expected = Ok(vec![
+            Token {
+                kind: TokenKind::Comment("".into()),
+                location: Location {
+                    line: 2,
+                    column: 0,
+                    path: path.clone(),
+                },
+            },
+            Token {
+                kind: TokenKind::Comment("Takes anything on the stack and duplicates it.".into()),
+                location: Location {
+                    line: 3,
+                    column: 0,
+                    path: path.clone(),
+                },
+            },
+            Token {
+                kind: TokenKind::Comment("fn [Any] dup [Any Any]".into()),
+                location: Location {
+                    line: 4,
+                    column: 0,
+                    path,
+                },
+            },
+        ]);
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn tokenize_comment_with_nested_string() {
+        let contents = r#"
+        ;; reversed and evaluates to
+        ;; a to-string , "a = " join. print
+        print "a = ${a}"
+    "#;
+
+        let path = PathBuf::from("HelloPath");
+
+        let actual = Tokenizer::tokenize(contents, path.clone());
+        let expected = Ok(vec![
+            Token {
+                kind: TokenKind::Comment("reversed and evaluates to".into()),
+                location: Location {
+                    line: 2,
+                    column: 8,
+                    path: path.clone(),
+                },
+            },
+            Token {
+                kind: TokenKind::Comment(r#"a to-string , "a = " join. print"#.into()),
+                location: Location {
+                    line: 3,
+                    column: 8,
+                    path: path.clone(),
+                },
+            },
+            Token {
+                kind: TokenKind::Identifier("print".into()),
+                location: Location {
+                    line: 4,
+                    column: 8,
+                    path: path.clone(),
+                },
+            },
+            Token {
+                kind: TokenKind::String(r#"a = ${a}"#.into()),
+                location: Location {
+                    line: 4,
+                    column: 14,
+                    path,
+                },
+            },
+        ]);
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn tokenize_complex_comments() {
+        let contents = r#"
+;;
+;; Built in methods + macros that are executed at compile time
+    "#;
+
+        let path = PathBuf::from("HelloPath");
+
+        let actual = Tokenizer::tokenize(contents, path.clone());
+        let expected = Ok(vec![
+            Token {
+                kind: TokenKind::Comment("".into()),
+                location: Location {
+                    line: 2,
+                    column: 0,
+                    path: path.clone(),
+                },
+            },
+            Token {
+                kind: TokenKind::Comment(
+                    "Built in methods + macros that are executed at compile time".into(),
+                ),
+                location: Location {
+                    line: 3,
+                    column: 0,
+                    path,
+                },
+            },
+        ]);
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn tokenize_comment_ends_with_newline() {
         let contents = ";foo\nident_test";
         let path = PathBuf::from("HelloPath");
 
-        let actual = Tokenizer::parse(contents, path.clone());
+        let actual = Tokenizer::tokenize(contents, path.clone());
         let expected = Ok(vec![
             Token {
                 kind: TokenKind::Comment("foo".into()),
                 location: Location {
-                    line: 0,
+                    line: 1,
                     column: 0,
                     path: path.clone(),
                 },
@@ -815,7 +994,7 @@ mod tests {
             Token {
                 kind: TokenKind::Identifier("ident_test".into()),
                 location: Location {
-                    line: 1,
+                    line: 2,
                     column: 0,
                     path,
                 },
@@ -825,26 +1004,26 @@ mod tests {
     }
 
     #[test]
-    fn parse_empty_returns_empty() {
+    fn tokenize_empty_returns_empty() {
         let contents = "     ";
 
-        let actual = Tokenizer::parse(contents, PathBuf::default());
+        let actual = Tokenizer::tokenize(contents, PathBuf::default());
 
         let expected = Ok(vec![]);
         assert_eq!(expected, actual);
     }
 
     #[test]
-    fn parse_symbol_ends_when_no_trailing_chars() {
+    fn tokenize_symbol_ends_when_no_trailing_chars() {
         let c = '(';
         let contents = c.to_string();
         let path = PathBuf::from("HelloPath");
 
-        let actual = Tokenizer::parse(&contents, path.clone());
+        let actual = Tokenizer::tokenize(&contents, path.clone());
         let expected = Ok(vec![Token {
             kind: TokenKind::Symbol(c),
             location: Location {
-                line: 0,
+                line: 1,
                 column: 0,
                 path,
             },
@@ -853,16 +1032,16 @@ mod tests {
     }
 
     #[test]
-    fn parse_symbol_ends_identifier() {
+    fn tokenize_symbol_ends_identifier() {
         let contents = "h(";
         let path = PathBuf::from("HelloPath");
 
-        let actual = Tokenizer::parse(&contents, path.clone());
+        let actual = Tokenizer::tokenize(&contents, path.clone());
         let expected = Ok(vec![
             Token {
                 kind: TokenKind::Identifier('h'.to_string()),
                 location: Location {
-                    line: 0,
+                    line: 1,
                     column: 0,
                     path: path.clone(),
                 },
@@ -870,7 +1049,7 @@ mod tests {
             Token {
                 kind: TokenKind::Symbol('('),
                 location: Location {
-                    line: 0,
+                    line: 1,
                     column: 1,
                     path,
                 },
@@ -880,16 +1059,16 @@ mod tests {
     }
 
     #[test]
-    fn parse_symbol_ends_identifiers() {
+    fn tokenize_symbol_ends_identifiers() {
         let contents = "h(()asd)fff";
         let path = PathBuf::from("HelloPath");
 
-        let actual = Tokenizer::parse(&contents, path.clone());
+        let actual = Tokenizer::tokenize(&contents, path.clone());
         let expected = Ok(vec![
             Token {
                 kind: TokenKind::Identifier("h".into()),
                 location: Location {
-                    line: 0,
+                    line: 1,
                     column: 0,
                     path: "HelloPath".into(),
                 },
@@ -897,7 +1076,7 @@ mod tests {
             Token {
                 kind: TokenKind::Symbol('('),
                 location: Location {
-                    line: 0,
+                    line: 1,
                     column: 1,
                     path: "HelloPath".into(),
                 },
@@ -905,7 +1084,7 @@ mod tests {
             Token {
                 kind: TokenKind::Symbol('('),
                 location: Location {
-                    line: 0,
+                    line: 1,
                     column: 2,
                     path: "HelloPath".into(),
                 },
@@ -913,7 +1092,7 @@ mod tests {
             Token {
                 kind: TokenKind::Symbol(')'),
                 location: Location {
-                    line: 0,
+                    line: 1,
                     column: 3,
                     path: "HelloPath".into(),
                 },
@@ -921,7 +1100,7 @@ mod tests {
             Token {
                 kind: TokenKind::Identifier("asd".into()),
                 location: Location {
-                    line: 0,
+                    line: 1,
                     column: 4,
                     path: "HelloPath".into(),
                 },
@@ -929,7 +1108,7 @@ mod tests {
             Token {
                 kind: TokenKind::Symbol(')'),
                 location: Location {
-                    line: 0,
+                    line: 1,
                     column: 7,
                     path: "HelloPath".into(),
                 },
@@ -937,7 +1116,7 @@ mod tests {
             Token {
                 kind: TokenKind::Identifier("fff".to_string()),
                 location: Location {
-                    line: 0,
+                    line: 1,
                     column: 8,
                     path: "HelloPath".into(),
                 },
@@ -947,15 +1126,15 @@ mod tests {
     }
 
     #[test]
-    fn parse_identifier_ends_when_no_trailing_chars() {
+    fn tokenize_identifier_ends_when_no_trailing_chars() {
         let contents = "foo";
         let path = PathBuf::from("HelloPath");
 
-        let actual = Tokenizer::parse(contents, path.clone());
+        let actual = Tokenizer::tokenize(contents, path.clone());
         let expected = Ok(vec![Token {
             kind: TokenKind::Identifier("foo".into()),
             location: Location {
-                line: 0,
+                line: 1,
                 column: 0,
                 path,
             },
@@ -964,16 +1143,16 @@ mod tests {
     }
 
     #[test]
-    fn parse_identifier_ends_with_comment() {
+    fn tokenize_identifier_ends_with_comment() {
         let contents = "test_ident;foo";
         let path = PathBuf::from("HelloPath");
 
-        let actual = Tokenizer::parse(contents, path.clone());
+        let actual = Tokenizer::tokenize(contents, path.clone());
         let expected = Ok(vec![
             Token {
                 kind: TokenKind::Identifier("test_ident".into()),
                 location: Location {
-                    line: 0,
+                    line: 1,
                     column: 0,
                     path: path.clone(),
                 },
@@ -981,7 +1160,7 @@ mod tests {
             Token {
                 kind: TokenKind::Comment("foo".into()),
                 location: Location {
-                    line: 0,
+                    line: 1,
                     column: 10,
                     path,
                 },
@@ -991,16 +1170,16 @@ mod tests {
     }
 
     #[test]
-    fn parse_identifier_ends_with_space() {
+    fn tokenize_identifier_ends_with_space() {
         let contents = "foo bar";
         let path = PathBuf::from("HelloPath");
 
-        let actual = Tokenizer::parse(contents, path.clone());
+        let actual = Tokenizer::tokenize(contents, path.clone());
         let expected = Ok(vec![
             Token {
                 kind: TokenKind::Identifier("foo".into()),
                 location: Location {
-                    line: 0,
+                    line: 1,
                     column: 0,
                     path: path.clone(),
                 },
@@ -1008,7 +1187,7 @@ mod tests {
             Token {
                 kind: TokenKind::Identifier("bar".into()),
                 location: Location {
-                    line: 0,
+                    line: 1,
                     column: 4,
                     path,
                 },
@@ -1018,16 +1197,16 @@ mod tests {
     }
 
     #[test]
-    fn parse_identifier_ends_with_string() {
+    fn tokenize_identifier_ends_with_string() {
         let contents = "foo\"bar\"";
         let path = PathBuf::from("HelloPath");
 
-        let actual = Tokenizer::parse(contents, path.clone());
+        let actual = Tokenizer::tokenize(contents, path.clone());
         let expected = Ok(vec![
             Token {
                 kind: TokenKind::Identifier("foo".into()),
                 location: Location {
-                    line: 0,
+                    line: 1,
                     column: 0,
                     path: path.clone(),
                 },
@@ -1035,7 +1214,7 @@ mod tests {
             Token {
                 kind: TokenKind::String("bar".into()),
                 location: Location {
-                    line: 0,
+                    line: 1,
                     column: 3,
                     path,
                 },
@@ -1045,17 +1224,17 @@ mod tests {
     }
 
     #[test]
-    fn parse_identifier_returns_err_if_begins_with_number() {
+    fn tokenize_identifier_returns_err_if_begins_with_number() {
         let contents = "12345FooBar";
         let path = PathBuf::from("1234HelloPath");
 
-        let actual = Tokenizer::parse(contents, path.clone());
+        let actual = Tokenizer::tokenize(contents, path.clone());
         let expected = Err(error::Error {
             kind: TokenErr::Identifier(IdentifierErr::BeginsWithNumber {
                 got: "12345FooBar".into(),
             }),
             location: Location {
-                line: 0,
+                line: 1,
                 column: 0,
                 path,
             },
@@ -1064,15 +1243,15 @@ mod tests {
     }
 
     #[test]
-    fn parse_nested_string() {
+    fn tokenize_nested_string() {
         let contents = r#""\"hello \ world!\"""#;
         let path = PathBuf::from("HelloPath");
 
-        let actual = Tokenizer::parse(contents, path.clone());
+        let actual = Tokenizer::tokenize(contents, path.clone());
         let expected = Ok(vec![Token {
             kind: TokenKind::String("\"hello \\ world!\"".into()),
             location: Location {
-                line: 0,
+                line: 1,
                 column: 0,
                 path,
             },
@@ -1081,15 +1260,15 @@ mod tests {
     }
 
     #[test]
-    fn parse_single_string() {
+    fn tokenize_single_string() {
         let contents = "\"hello world!\"";
         let path = PathBuf::from("HelloPath");
 
-        let actual = Tokenizer::parse(contents, path.clone());
+        let actual = Tokenizer::tokenize(contents, path.clone());
         let expected = Ok(vec![Token {
             kind: TokenKind::String("hello world!".into()),
             location: Location {
-                line: 0,
+                line: 1,
                 column: 0,
                 path,
             },
@@ -1098,16 +1277,16 @@ mod tests {
     }
 
     #[test]
-    fn parse_number_returns_number_from_int() {
+    fn tokenize_number_returns_number_from_int() {
         let contents = "12345 6780";
         let path = PathBuf::from("HelloPath");
 
-        let actual = Tokenizer::parse(contents, path.clone());
+        let actual = Tokenizer::tokenize(contents, path.clone());
         let expected = Ok(vec![
             Token {
                 kind: TokenKind::Number(12345.0),
                 location: Location {
-                    line: 0,
+                    line: 1,
                     column: 0,
                     path: path.clone(),
                 },
@@ -1115,7 +1294,7 @@ mod tests {
             Token {
                 kind: TokenKind::Number(6780.0),
                 location: Location {
-                    line: 0,
+                    line: 1,
                     column: 6,
                     path,
                 },
@@ -1125,16 +1304,16 @@ mod tests {
     }
 
     #[test]
-    fn parse_number_returns_number_from_float() {
+    fn tokenize_number_returns_number_from_float() {
         let contents = "12345.033 -6.780";
         let path = PathBuf::from("HelloPath");
 
-        let actual = Tokenizer::parse(contents, path.clone());
+        let actual = Tokenizer::tokenize(contents, path.clone());
         let expected = Ok(vec![
             Token {
                 kind: TokenKind::Number(12345.033),
                 location: Location {
-                    line: 0,
+                    line: 1,
                     column: 0,
                     path: path.clone(),
                 },
@@ -1142,7 +1321,7 @@ mod tests {
             Token {
                 kind: TokenKind::Number(-6.78),
                 location: Location {
-                    line: 0,
+                    line: 1,
                     column: 10,
                     path,
                 },
@@ -1152,22 +1331,22 @@ mod tests {
     }
 
     #[test]
-    fn parse_unclosed_string_returns_err() {
+    fn tokenize_unclosed_string_returns_err() {
         let contents = "\"hello \n world!";
         let path = PathBuf::from("HelloPath");
 
-        let actual = Tokenizer::parse(contents, path.clone());
+        let actual = Tokenizer::tokenize(contents, path.clone());
         let expected = Err(error::Error {
             kind: TokenErr::String(StringErr::Unclosed(StringState {
                 start: Location {
-                    line: 0,
+                    line: 1,
                     column: 0,
                     path: path.clone(),
                 },
                 contents: "hello \n world!".into(),
             })),
             location: Location {
-                line: 1,
+                line: 2,
                 column: 7,
                 path: path.clone(),
             },

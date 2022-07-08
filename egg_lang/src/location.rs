@@ -15,4 +15,9 @@ impl Location {
             path,
         }
     }
+
+    pub fn increment_line(mut self) -> Self {
+        self.line += 1;
+        self
+    }
 }

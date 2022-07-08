@@ -1,15 +1,26 @@
 pub mod error;
 pub mod location;
+pub mod parser;
 pub mod tokenizer;
 
 use benchy::Benchy;
+use std::{fs, path::PathBuf};
 
 fn main() {
     {
-        Benchy::time("Print world");
-        println!("Hello, world!");
+        Benchy::time("read_file");
+
+        let path: PathBuf = "../test.egg".into();
+
+        let contents = fs::read_to_string(&path).expect("Something went wrong reading the file");
+        println!("{}", contents);
+
+        println!("\n\n\n");
+
+        let tokens = tokenizer::Tokenizer::tokenize(&contents, path).unwrap();
+
+        println!("{:#?}", tokens);
     }
-    save_benchmarks();
 }
 
 fn save_benchmarks() {
