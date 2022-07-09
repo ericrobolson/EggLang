@@ -5,6 +5,11 @@ use std::path::PathBuf;
 pub type Err = error::Error<TokenErr>;
 pub type Success = Vec<Token>;
 
+pub const ESCAPE_CHARACTER: char = '\\';
+pub const QUOTE: char = '\"';
+pub const COMMENT: char = ';';
+pub const NEW_LINE: char = '\n';
+
 /// Represents a single token.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Token {
@@ -87,14 +92,9 @@ pub struct Tokenizer {
     state_stack: Vec<State>,
 }
 
-pub const ESCAPE_CHARACTER: char = '\\';
-pub const QUOTE: char = '\"';
-pub const COMMENT: char = ';';
-pub const NEW_LINE: char = '\n';
-
 fn is_symbol(c: char) -> bool {
     match c {
-        '(' | ')' | '[' | ']' | '{' | '}' => {
+        '(' | ')' => {
             //
             true
         }

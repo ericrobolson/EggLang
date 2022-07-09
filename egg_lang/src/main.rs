@@ -19,7 +19,9 @@ fn main() {
 
         let tokens = tokenizer::Tokenizer::tokenize(&contents, path).unwrap();
 
-        println!("{:#?}", tokens);
+        let nodes = parser::Parser::parse(tokens).unwrap();
+
+        println!("{:#?}", nodes);
     }
 }
 

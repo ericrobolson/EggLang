@@ -1,7 +1,10 @@
 
-enum Color {
-    Red,
-    Blue,
-    Green,
-    RGBA [Number Number Number Number]
-}
+
+
+(def add_multiply (a b multiplier) 
+   (* multiplier 
+    (+ a b))
+)
+
+
+

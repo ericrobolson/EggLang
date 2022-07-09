@@ -6,14 +6,19 @@
 - [x] As a user, I want to be able to tokenize comments.
 - [x] As a user, I want to add in symbols and end things on `[]`, `()` or `{}`
 - [x] As a developer I want to minimize the exposed surface area of the tokenizer and break up the module into logical parts.
-## Direction
-- [x] As a core developer, I need to decide on a Lisp or a Forth or a map based pattern matching language like Elixir/Erlang. Map based concatenative language like Forth/Elixir.
-- [ ] As a core developer, I need to decide whether to use types or not
-## Extension
-- [ ] As a developer, I want to be able to use a language server that can run tests, do code coverage integrations and run tests. It should come with built in benchmarking, etc. It should also be bootstrapped in `EggLang`. 
 
-## Benchmarks
+## Parser
+- [x] As a user, I need to be able to parse lists.
+- [x] As a user, I need to be able to parse things other than lists.
+
+## Design
+- [ ] As a developer, I want the ability to define structs
+- [ ] As a developer, I want the ability to define enums
+- [ ] As a developer, I want the ability to define function
+- [ ] As a developer, I want generics
+
+## Extension + useability
+- [ ] As a developer, I want to be able to use a language server that can run tests, do code coverage integrations, code completion, and run tests. It should come with built in benchmarking, etc. It should also be bootstrapped in `EggLang`. 
+- [ ] As a developer, I want to expose a C API for the runtime to allow embedding.
 - [ ] As a developer, I want to extend `benchy` to support the number of calls made.
 
-## Future
-- [ ] As a core developer, I need to expose a C API for the runtime to allow embedding.
