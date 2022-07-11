@@ -11,6 +11,9 @@
 - [x] As a user, I need to be able to parse lists.
 - [x] As a user, I need to be able to parse things other than lists.
 
+## Environment
+- [ ] As a developer, I want to spin up an environment in an interpreter so I can run Lisp code at compile time
+
 ## Design
 - [ ] As a developer, I want the ability to define structs
 - [ ] As a developer, I want the ability to define enums

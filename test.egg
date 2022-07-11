@@ -1,10 +1,3 @@
-
-
-
-(def add_multiply (a b multiplier) 
+(def (add-multiply a b multiplier) 
    (* multiplier 
-    (+ a b))
-)
-
-
-
+    (+ a b)))

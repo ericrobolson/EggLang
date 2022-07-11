@@ -325,6 +325,21 @@ mod tests {
     }
 
     #[test]
+    fn parse_returns_negative_number() {
+        let contents = "-1.22";
+        let path: PathBuf = "derpy".into();
+        let tokens = Tokenizer::tokenize(contents, path).unwrap();
+
+        let actual = Parser::parse(tokens.clone());
+        let expected = vec![Node {
+            ast: Ast::Number(-1.22),
+            tokens: vec![tokens[0].clone()],
+        }];
+
+        assert_eq!(expected, actual.unwrap());
+    }
+
+    #[test]
     fn parse_returns_string_number_and_list() {
         let contents = "(
             \"foo\"

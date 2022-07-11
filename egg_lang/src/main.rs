@@ -1,3 +1,4 @@
+pub mod environment;
 pub mod error;
 pub mod location;
 pub mod parser;
