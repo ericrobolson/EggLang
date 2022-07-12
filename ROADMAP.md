@@ -12,6 +12,7 @@
 - [x] As a user, I need to be able to parse things other than lists.
 
 ## Backend 
+- [ ] As a developer, I want to be able to specify operations for each backend to construct structs.
 - [ ] As a developer, I want to provide some IR to a C backend constructed from a JSON object to compile C code. It will use stack ops to build up a language.
 - [ ] Implement for JavaScript
 - [ ] Implement for C#

@@ -1,11 +1,19 @@
+mod c_backend;
+mod struct_rules;
+
+use self::struct_rules::StructRules;
+
 use super::file::File;
 use crate::intermediate_representation::*;
-
-mod c_backend;
 
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct Stack<Op> {
     pub ops: Vec<Op>,
+}
+impl<Op> Stack<Op> {
+    pub fn ops(&self) -> &[Op] {
+        &self.ops
+    }
 }
 
 /// An series of rules used for constructing a language.
@@ -13,6 +21,7 @@ pub struct Stack<Op> {
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct TargetV1 {
     pub main_file_rules: Stack<StringOps>,
+    pub struct_rules: StructRules,
 }
 
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -27,14 +36,13 @@ impl TargetV1 {
         serde_json::from_str(target_json)
     }
 
-    fn compile(&self, ir: Artifact) -> Vec<File> {
+    pub fn compile(&self, ir: Artifact) -> Vec<File> {
         let mut files = vec![];
         match ir.artifact_type {
             ArtifactType::Executable(exe) => {
                 //
 
                 let mut file_name = String::new();
-                let contents = String::default();
 
                 for op in self.main_file_rules.ops.iter() {
                     match op {
@@ -42,6 +50,16 @@ impl TargetV1 {
                         StringOps::ModuleName => file_name.push_str(&exe.main_module.file_name),
                     }
                 }
+
+                let structs = self.struct_rules.compile(&exe.main_module);
+
+                let contents = format!(
+                    r#"
+{structs}
+"#
+                )
+                .trim()
+                .to_string();
 
                 files.push(File {
                     contents,
@@ -53,9 +71,4 @@ impl TargetV1 {
 
         files
     }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
 }

@@ -9,5 +9,35 @@
                 "value": ".c"
             }
         ]
+    },
+    "struct_rules": {
+        "ops": [
+            {
+                "type": "Concat",
+                "value": "struct "
+            },
+            {
+                "type": "StructName"
+            },
+            {
+                "type": "Concat",
+                "value": " {\n"
+            },
+            {
+                "type": "BuildProperties"
+            },
+            {
+                "type": "Concat",
+                "value": "} "
+            },
+            {
+                "type": "StructName"
+            },
+            {
+                "type": "Concat",
+                "value": ";"
+            }
+        ],
+        "property_ops": []
     }
 }

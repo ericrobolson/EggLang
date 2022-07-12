@@ -20,37 +20,43 @@ mod tests {
                 file_name: "hello_world".to_string(),
                 main_module: Module {
                     file_name: "main".into(),
+                    structs: vec![
+                        Struct {
+                            name: "FooBar".into(),
+                            properties: vec![],
+                        },
+                        Struct {
+                            name: "TestyMctest".into(),
+                            properties: vec![
+                                Property {
+                                    name: "alive".into(),
+                                    t: PrimitiveType::EggBool,
+                                },
+                                Property {
+                                    name: "hp".into(),
+                                    t: PrimitiveType::EggI32,
+                                },
+                            ],
+                        },
+                    ],
                 },
             }),
         };
 
         let main_c = r#"
-#include <stdio.h>
-#include "main.h"
+struct FooBar {
+} FooBar;
 
-int main()
-{
-    printf("hi \n\n");
-    return 0;
-}
+struct TestyMctest {
+    EggBool alive;
+    EggI32 hp; 
+} TestyMctest;
 "#;
-        let main_h = r#""#;
 
-        // todo: remove these
-        let main_c = "";
-        let main_h = "";
-        // end todo
-
-        let expected = vec![
-            File {
-                contents: main_c.trim().to_string(),
-                file_name: "main.c".into(),
-            },
-            // File {
-            //     contents: main_h.trim().to_string(),
-            //     file_name: "main.h".into(),
-            // },
-        ];
+        let expected = vec![File {
+            contents: main_c.trim().to_string(),
+            file_name: "main.c".into(),
+        }];
 
         let actual = target().compile(input);
 
