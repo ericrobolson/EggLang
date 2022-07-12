@@ -1,5 +1,7 @@
+pub mod backends;
 pub mod environment;
 pub mod error;
+pub mod intermediate_representation;
 pub mod location;
 pub mod parser;
 pub mod tokenizer;
