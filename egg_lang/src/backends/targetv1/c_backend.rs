@@ -1,9 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use crate::{
-        backends::file::File,
-        intermediate_representation::{self, *},
-    };
+    use crate::{backends::file::File, intermediate_representation::*};
 
     use super::super::*;
 
@@ -43,20 +40,28 @@ mod tests {
             }),
         };
 
-        let main_c = r#"
+        let main_c = "";
+
+        let main_h = "
 struct FooBar {
 } FooBar;
 
 struct TestyMctest {
-    EggBool alive;
-    EggI32 hp; 
+\tEggBool alive;
+\tEggI32 hp;
 } TestyMctest;
-"#;
+";
 
-        let expected = vec![File {
-            contents: main_c.trim().to_string(),
-            file_name: "main.c".into(),
-        }];
+        let expected = vec![
+            File {
+                contents: main_c.trim().to_string(),
+                file_name: "main.c".into(),
+            },
+            File {
+                contents: main_h.trim().to_string(),
+                file_name: "main.h".into(),
+            },
+        ];
 
         let actual = target().compile(input);
 

@@ -1,15 +1,39 @@
 {
-    "main_file_rules": {
-        "ops": [
-            {
-                "type": "ModuleName"
-            },
-            {
-                "type": "Concat",
-                "value": ".c"
-            }
-        ]
-    },
+    "file_generation": [
+        {
+            "comment": "Used for generating header files",
+            "type": "File",
+            "name_ops": [
+                {
+                    "type": "FileName"
+                },
+                {
+                    "type": "Concat",
+                    "value": ".h"
+                }
+            ],
+            "content_ops": [
+                {
+                    "type": "StructDefinitions"
+                }
+            ]
+        },
+        {
+            "comment": "Used for generating implementation files",
+            "type": "File",
+            "name_ops": [
+                {
+                    "type": "FileName"
+                },
+                {
+                    "type": "Concat",
+                    "value": ".c"
+                }
+            ],
+            "content_ops": []
+        }
+    ],
+    "system_includes": [],
     "struct_rules": {
         "ops": [
             {
@@ -38,6 +62,25 @@
                 "value": ";"
             }
         ],
-        "property_ops": []
+        "property_ops": [
+            {
+                "type": "Concat",
+                "value": "\t"
+            },
+            {
+                "type": "PropertyType"
+            },
+            {
+                "type": "Concat",
+                "value": " "
+            },
+            {
+                "type": "PropertyName"
+            },
+            {
+                "type": "Concat",
+                "value": ";\n"
+            }
+        ]
     }
 }

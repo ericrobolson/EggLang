@@ -11,21 +11,22 @@
 - [x] As a user, I need to be able to parse lists.
 - [x] As a user, I need to be able to parse things other than lists.
 
-## Backend 
-- [ ] As a developer, I want to be able to specify operations for each backend to construct structs.
-- [ ] As a developer, I want to provide some IR to a C backend constructed from a JSON object to compile C code. It will use stack ops to build up a language.
-- [ ] Implement for JavaScript
-- [ ] Implement for C#
+## C Backend 
+- [x] As a developer, I want to be able to specify operations for the C backend to construct structs.
+- [x] As a developer, I want my struct definitions to be in headers
+- [ ] As a developer, I want my function definitions for C to be in headers
+- [ ] As a developer, I want my structs and functions to be imported in my implementation files 
+- [ ] As a developer, I want the ability to specify built in primitive types and functions
+- [ ] As a developer, I want the ability to include the primitive built in type headers
 
+## JavaScript backend
+- [ ] Todo
 
-## Backend - JavaScript
+## C# backend
+- [ ] Todo
+
+## Compiler Front end
 - [ ] 
-
-## Backend - C
-- [ ] 
-
-## Environment
-- [ ] As a developer, I want to spin up an environment in an interpreter so I can run Lisp code at compile time
 
 ## Design
 - [ ] As a developer, I want the ability to define structs

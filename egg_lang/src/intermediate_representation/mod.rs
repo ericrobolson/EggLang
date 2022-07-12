@@ -10,6 +10,9 @@ It will not closely mirror the host language, but for now I want to get maximal 
 
 */
 
+mod egg_struct;
+pub use egg_struct::*;
+
 /// The core representation of the artifact that will be built.
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct Artifact {
@@ -38,21 +41,28 @@ pub struct Module {
     pub structs: Vec<Struct>,
 }
 
-#[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
-pub struct Struct {
-    pub name: String,
-    pub properties: Vec<Property>,
-}
-
-#[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
-pub struct Property {
-    pub name: String,
-    pub t: PrimitiveType,
-}
-
 /// The various primitive types that must be supported.
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum PrimitiveType {
     EggBool,
     EggI32,
+}
+impl PrimitiveType {
+    pub fn to_string(&self) -> String {
+        match self {
+            PrimitiveType::EggBool => "EggBool",
+            PrimitiveType::EggI32 => "EggI32",
+        }
+        .to_string()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn primitive_type_to_str() {
+        assert_eq!("EggBool", PrimitiveType::EggBool.to_string())
+    }
 }
