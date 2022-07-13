@@ -14,8 +14,12 @@
 ## C Backend 
 - [x] As a developer, I want to be able to specify operations for the C backend to construct structs.
 - [x] As a developer, I want my struct definitions to be in headers
-- [ ] As a developer, I want my function definitions for C to be in headers
-- [ ] As a developer, I want my structs and functions to be imported in my implementation files 
+- [x] As a developer, I want my function definitions for C to be in headers
+- [x] As a developer, I want my function implementations to be in implementation files
+- [ ] As a developer, I want my structs and function definitions to be imported in my implementation files
+- [ ] As a developer, I want the ability to add in expressions to function implementations
+- [ ] As a developer, I want the ability to specify comments
+- [ ] As a developer, I want the ability to use structs in functions
 - [ ] As a developer, I want the ability to specify built in primitive types and functions
 - [ ] As a developer, I want the ability to include the primitive built in type headers
 

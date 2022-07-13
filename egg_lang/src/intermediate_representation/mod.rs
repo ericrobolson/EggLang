@@ -10,8 +10,12 @@ It will not closely mirror the host language, but for now I want to get maximal 
 
 */
 
+mod egg_func;
 mod egg_struct;
+mod property;
+pub use egg_func::*;
 pub use egg_struct::*;
+pub use property::*;
 
 /// The core representation of the artifact that will be built.
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -38,6 +42,7 @@ pub struct Executable {
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct Module {
     pub file_name: String,
+    pub funcs: Vec<Func>,
     pub structs: Vec<Struct>,
 }
 

@@ -1,7 +1,7 @@
-use super::Property;
+use super::PrimitiveType;
 
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
-pub struct Struct {
+pub struct Property {
     pub name: String,
-    pub properties: Vec<Property>,
+    pub t: PrimitiveType,
 }

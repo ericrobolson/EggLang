@@ -14,6 +14,13 @@
             ],
             "content_ops": [
                 {
+                    "type": "FunctionDefinitions"
+                },
+                {
+                    "type": "Concat",
+                    "value": "\n"
+                },
+                {
                     "type": "StructDefinitions"
                 }
             ]
@@ -30,10 +37,81 @@
                     "value": ".c"
                 }
             ],
-            "content_ops": []
+            "content_ops": [
+                {
+                    "type": "FunctionImplementations"
+                }
+            ]
         }
     ],
-    "system_includes": [],
+    "func_rules": {
+        "implementation_ops": [
+            {
+                "type": "ReturnType"
+            },
+            {
+                "type": "Concat",
+                "value": " "
+            },
+            {
+                "type": "FuncName"
+            },
+            {
+                "type": "Concat",
+                "value": "("
+            },
+            {
+                "type": "BuildProperties"
+            },
+            {
+                "type": "Concat",
+                "value": ") {\n"
+            },
+            {
+                "type": "Concat",
+                "value": "}\n"
+            }
+        ],
+        "property_ops": [
+            {
+                "type": "PropertyType"
+            },
+            {
+                "type": "Concat",
+                "value": " "
+            },
+            {
+                "type": "PropertyName"
+            },
+            {
+                "type": "ConcatIfNotEnd",
+                "value": ", "
+            }
+        ],
+        "declaration_ops": [
+            {
+                "type": "ReturnType"
+            },
+            {
+                "type": "Concat",
+                "value": " "
+            },
+            {
+                "type": "FuncName"
+            },
+            {
+                "type": "Concat",
+                "value": "("
+            },
+            {
+                "type": "BuildProperties"
+            },
+            {
+                "type": "Concat",
+                "value": ");\n"
+            }
+        ]
+    },
     "struct_rules": {
         "ops": [
             {

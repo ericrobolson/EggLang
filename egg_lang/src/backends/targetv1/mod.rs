@@ -1,8 +1,8 @@
 mod c_backend;
+mod function_rules;
 mod struct_rules;
 
-use self::struct_rules::StructRules;
-
+use self::{function_rules::FuncRules, struct_rules::StructRules};
 use super::file::File;
 use crate::intermediate_representation::*;
 
@@ -20,9 +20,9 @@ impl<Op> Stack<Op> {
 /// Typically operates on stacks for simplicity.
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct TargetV1 {
-    pub system_includes: Vec<String>,
     pub struct_rules: StructRules,
     pub file_generation: Vec<GenerationOps>,
+    pub func_rules: FuncRules,
 }
 
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -30,23 +30,26 @@ pub struct TargetV1 {
 pub enum GenerationOps {
     File {
         comment: String,
-        name_ops: Vec<StringOps>,
         content_ops: Vec<ContentOps>,
+        name_ops: Vec<StringOps>,
     },
 }
 
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(tag = "type")]
 pub enum ContentOps {
+    Concat { value: String },
+    FunctionDefinitions,
+    FunctionImplementations,
     StructDefinitions,
 }
 
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(tag = "type")]
 pub enum StringOps {
-    ModuleName,
-    FileName,
     Concat { value: String },
+    FileName,
+    ModuleName,
 }
 
 impl TargetV1 {
@@ -59,8 +62,11 @@ impl TargetV1 {
         match ir.artifact_type {
             ArtifactType::Executable(exe) => {
                 //
+                let module = &exe.main_module;
 
-                let structs = self.struct_rules.compile(&exe.main_module);
+                let structs = self.struct_rules.compile(module);
+                let func_definitions = self.func_rules.compile_definitions(module);
+                let func_implementations = self.func_rules.compile_implementations(module);
 
                 for op in self.file_generation.iter() {
                     match op {
@@ -85,6 +91,13 @@ impl TargetV1 {
                             for op in content_ops {
                                 match op {
                                     ContentOps::StructDefinitions => contents.push_str(&structs),
+                                    ContentOps::FunctionDefinitions => {
+                                        contents.push_str(&func_definitions)
+                                    }
+                                    ContentOps::FunctionImplementations => {
+                                        contents.push_str(&func_implementations)
+                                    }
+                                    ContentOps::Concat { value } => contents.push_str(&value),
                                 }
                             }
 
