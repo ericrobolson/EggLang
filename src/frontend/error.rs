@@ -1,4 +1,4 @@
-use crate::location::Location;
+use super::location::Location;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Error<Kind> {

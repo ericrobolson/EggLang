@@ -1,6 +1,6 @@
-use crate::error;
-use crate::location::Location;
-use crate::tokenizer::{Token, TokenKind};
+use super::error;
+use super::location::Location;
+use super::tokenizer::{Token, TokenKind};
 
 pub type Err = error::Error<ParserErr>;
 
@@ -233,7 +233,7 @@ struct ListState {
 mod tests {
     use std::path::PathBuf;
 
-    use crate::tokenizer::Tokenizer;
+    use crate::frontend::tokenizer::Tokenizer;
 
     use super::*;
 
