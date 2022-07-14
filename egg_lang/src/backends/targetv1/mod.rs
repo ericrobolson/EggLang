@@ -1,8 +1,9 @@
 mod c_backend;
 mod function_rules;
+mod include_rules;
 mod struct_rules;
 
-use self::{function_rules::FuncRules, struct_rules::StructRules};
+use self::{function_rules::FuncRules, include_rules::IncludeRules, struct_rules::StructRules};
 use super::file::File;
 use crate::intermediate_representation::*;
 
@@ -23,6 +24,7 @@ pub struct TargetV1 {
     pub struct_rules: StructRules,
     pub file_generation: Vec<GenerationOps>,
     pub func_rules: FuncRules,
+    pub include_rules: IncludeRules,
 }
 
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -42,6 +44,7 @@ pub enum ContentOps {
     FunctionDefinitions,
     FunctionImplementations,
     StructDefinitions,
+    IncludeRules,
 }
 
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -67,6 +70,7 @@ impl TargetV1 {
                 let structs = self.struct_rules.compile(module);
                 let func_definitions = self.func_rules.compile_definitions(module);
                 let func_implementations = self.func_rules.compile_implementations(module);
+                let includes = self.include_rules.compile(module);
 
                 for op in self.file_generation.iter() {
                     match op {
@@ -98,6 +102,7 @@ impl TargetV1 {
                                         contents.push_str(&func_implementations)
                                     }
                                     ContentOps::Concat { value } => contents.push_str(&value),
+                                    ContentOps::IncludeRules => contents.push_str(&includes),
                                 }
                             }
 
