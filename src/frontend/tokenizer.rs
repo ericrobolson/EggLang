@@ -1,4 +1,4 @@
-use crate::{error, location::Location};
+use super::{error, location::Location};
 use benchy::Benchy;
 use std::path::PathBuf;
 

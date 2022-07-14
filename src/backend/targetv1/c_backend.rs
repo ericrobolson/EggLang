@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use crate::{backends::file::File, intermediate_representation::*};
+    use crate::{backend::file::File, intermediate_representation::*};
 
     use super::super::*;
 
