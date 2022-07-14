@@ -43,6 +43,7 @@ pub struct Executable {
 pub struct Module {
     pub file_name: String,
     pub funcs: Vec<Func>,
+    pub includes: Vec<String>,
     pub structs: Vec<Struct>,
 }
 

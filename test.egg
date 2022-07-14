@@ -1,3 +1,0 @@
-(def (add-multiply a b multiplier) 
-   (* multiplier 
-    (+ a b)))

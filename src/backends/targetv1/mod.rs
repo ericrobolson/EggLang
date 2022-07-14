@@ -21,10 +21,15 @@ impl<Op> Stack<Op> {
 /// Typically operates on stacks for simplicity.
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct TargetV1 {
-    pub struct_rules: StructRules,
     pub file_generation: Vec<GenerationOps>,
+    pub rules: Rules,
+}
+
+#[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct Rules {
     pub func_rules: FuncRules,
     pub include_rules: IncludeRules,
+    pub struct_rules: StructRules,
 }
 
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -34,7 +39,14 @@ pub enum GenerationOps {
         comment: String,
         content_ops: Vec<ContentOps>,
         name_ops: Vec<StringOps>,
+        mutation_ops: Vec<MutationOp>,
     },
+}
+
+#[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(tag = "type")]
+pub enum MutationOp {
+    InsertModuleNameIntoIncludes,
 }
 
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -67,18 +79,33 @@ impl TargetV1 {
                 //
                 let module = &exe.main_module;
 
-                let structs = self.struct_rules.compile(module);
-                let func_definitions = self.func_rules.compile_definitions(module);
-                let func_implementations = self.func_rules.compile_implementations(module);
-                let includes = self.include_rules.compile(module);
-
                 for op in self.file_generation.iter() {
                     match op {
                         GenerationOps::File {
                             comment: _,
                             name_ops,
                             content_ops,
+                            mutation_ops,
                         } => {
+                            let mut module = module.clone();
+
+                            for op in mutation_ops {
+                                match op {
+                                    MutationOp::InsertModuleNameIntoIncludes => {
+                                        module.includes.push(module.file_name.clone());
+                                    }
+                                }
+                            }
+
+                            let module = &module;
+
+                            let structs = self.rules.struct_rules.compile(module);
+                            let func_definitions =
+                                self.rules.func_rules.compile_definitions(module);
+                            let func_implementations =
+                                self.rules.func_rules.compile_implementations(module);
+                            let includes = self.rules.include_rules.compile(module);
+
                             let mut file_name = String::new();
 
                             for op in name_ops {

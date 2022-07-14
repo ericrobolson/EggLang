@@ -10,6 +10,10 @@ use benchy::Benchy;
 use std::{fs, path::PathBuf};
 
 fn main() {
+    println!("Hello! Right now the backend is being worked on. Stay tuned for updates.")
+}
+
+fn example_main() {
     {
         Benchy::time("read_file");
 
@@ -26,6 +30,8 @@ fn main() {
 
         println!("{:#?}", nodes);
     }
+
+    save_benchmarks();
 }
 
 fn save_benchmarks() {

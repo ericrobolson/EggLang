@@ -41,6 +41,7 @@ mod tests {
                             ],
                         },
                     ],
+                    includes: vec![],
                 },
             }),
         };
@@ -57,6 +58,8 @@ struct TestyMctest {
 } TestyMctest;";
 
         let main_c = "
+#include \"main.h\"
+
 EggBool say_hello() {
 }
 ";
@@ -90,6 +93,7 @@ EggBool say_hello() {
                         return_type: PrimitiveType::EggBool,
                     }],
                     structs: vec![],
+                    includes: vec![],
                 },
             }),
         };
@@ -98,6 +102,8 @@ EggBool say_hello() {
 EggBool say_hello();\n\n";
 
         let main_c = "
+#include \"main.h\"
+
 EggBool say_hello() {
 }\n";
 
@@ -139,6 +145,7 @@ EggBool say_hello() {
                         return_type: PrimitiveType::EggBool,
                     }],
                     structs: vec![],
+                    includes: vec![],
                 },
             }),
         };
@@ -147,6 +154,8 @@ EggBool say_hello() {
 EggBool say_hello(EggBool bar, EggI32 foo);\n\n";
 
         let main_c = "
+#include \"main.h\"
+
 EggBool say_hello(EggBool bar, EggI32 foo) {
 }\n";
 
@@ -198,6 +207,7 @@ EggBool say_hello(EggBool bar, EggI32 foo) {
                         },
                     ],
                     structs: vec![],
+                    includes: vec![],
                 },
             }),
         };
@@ -208,6 +218,8 @@ EggI32 first_fn(EggBool derp);
 EggBool say_hello(EggBool bar, EggI32 foo);\n\n";
 
         let main_c = "
+#include \"main.h\"
+
 EggI32 first_fn(EggBool derp) {
 }
 
