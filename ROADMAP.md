@@ -30,7 +30,7 @@
 - [ ] Todo
 
 ## Compiler Front end
-- [ ] 
+- [ ] Todo
 
 ## Design
 - [ ] As a developer, I want the ability to define structs
@@ -40,6 +40,5 @@
 
 ## Extension + useability
 - [ ] As a developer, I want to be able to use a language server that can run tests, do code coverage integrations, code completion, and run tests. It should come with built in benchmarking, etc. It should also be bootstrapped in `EggLang`. 
-- [ ] As a developer, I want to expose a C API for the runtime to allow embedding.
 - [ ] As a developer, I want to extend `benchy` to support the number of calls made.
 
