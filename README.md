@@ -1,10 +1,4 @@
-EggLang has a compiler with the following features
-- Easily extendable. Takes in JSON objects for targets and can easily compile a new one.
+# Resources
 
-Target features:
-- Lisp like macro system
-- Statically typed/compiled
-- Modules
-- Package manager
-- Enums
-- Structs
+- [LSP Spec](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#baseProtocol)
+- [Impementation tutorial](https://www.youtube.com/watch?v=YsdlcQoHqPY)
