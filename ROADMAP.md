@@ -1,0 +1,3 @@
+- [ ] Install everything
+- [ ] Modify `clients/egglang-lsp` to start lsp
+- [ ]
