@@ -13,7 +13,13 @@ pub fn serialize_packet(string: &str) -> String {
         .replace("{CONTENT}", string)
 }
 
-pub fn read_packet(string: &str) -> Result<String, String> {
+#[derive(Debug, Clone, PartialEq)]
+pub struct Packet {
+    pub decoded: String,
+    pub remaining: String,
+}
+
+pub fn read_packet(string: &str) -> Result<Packet, String> {
     let content_length_key = "Content-Length:";
     let content_length_index = get_value(
         string.find(content_length_key),
@@ -23,7 +29,7 @@ pub fn read_packet(string: &str) -> Result<String, String> {
     let content_length_index = content_length_index + content_length_key.len();
 
     let return_key = "\r\n\r\n";
-    let end_index = get_value(string.find(return_key), "'\r\n\r\n' not found")?;
+    let end_index = get_value(string.find(return_key), "'\\r\\n\\r\\n' not found")?;
 
     let content_length = &string[content_length_index..end_index];
     let content_length = match content_length.trim().parse::<usize>() {
@@ -45,7 +51,12 @@ pub fn read_packet(string: &str) -> Result<String, String> {
     }
 
     let content = &string[content_start..content_start + content_length];
-    Ok(content.trim().to_string())
+    let remaining = &string[content_start + content_length..];
+
+    Ok(Packet {
+        decoded: content.trim().to_string(),
+        remaining: remaining.to_string(),
+    })
 }
 
 #[cfg(test)]
@@ -121,12 +132,15 @@ Content-Length: 123\r\n\r\n
     #[test]
     fn read_packet_returns_value() {
         let string = "
-Content-Length: 18\r\n\r\n
+Content-Length: 17\r\n\r\n
 {
     blahblah
-}
-        ";
+}The Rest of the Message";
         let result = read_packet(string);
-        assert_eq!(result, Ok("{\n    blahblah\n}".to_string()));
+        let expected = Packet {
+            decoded: "{\n    blahblah\n}".to_string(),
+            remaining: "The Rest of the Message".to_string(),
+        };
+        assert_eq!(result, Ok(expected));
     }
 }
