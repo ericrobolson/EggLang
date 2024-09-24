@@ -1,3 +1,4 @@
-- [ ] Install everything
-- [ ] Modify `clients/egglang-lsp` to start lsp
-- [ ]
+- [x] Begin new concatenative language that can calculate the stack types
+- [x] Add a new method for Cat which when given a `Location`, will return the stack type up to that location
+- [ ] Add string parsing to Cat
+- [ ] Add identifier parsing to Cat

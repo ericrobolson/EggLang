@@ -1,6 +1,8 @@
+mod cat;
 mod packet;
+fn main() {}
 
-fn main() {
+fn lsp_main() {
     // Read in stdin until eof and print it back out
     let mut buffer = String::new();
 

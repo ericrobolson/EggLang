@@ -100,7 +100,7 @@ Content-Length: 123 {
         
         "#;
         let result = read_packet(string);
-        assert_eq!(result, Err("'\r\n\r\n' not found".to_string()));
+        assert_eq!(result, Err("'\\r\\n\\r\\n' not found".to_string()));
     }
 
     #[test]
