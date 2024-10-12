@@ -1,38 +1,7 @@
-Idea
+## EggLang
+A lispy language that compiles to CPP.
 
-Unit Stats
-
-- Health
-- Speed
-- Movement
-- Attack
-- Defense
-- Sp. Attack
-- Sp. Defense
-- Types[]
-- Abilities[4]
-
-- Warmachine/40k style game mixed with pokemon
-- Lots of customization around building; you get a point total like 40k/warmachine and you can build your units before playing.
-- You can modify how many units you get, how much defense, speed, attack, etc., and select abilities. You can also .
-- Simultaneous turns where players make choices and they play out
-- - Movement Phase
-- - - Players move their units without knowledge of where the other players are moving
-- - - Players can move their units in any direction
-- - - When all players have selected their movement, the movement is played out
-- - - It resolves in order of each unit speed, with the fastest units moving first
-- - - Moves that would result in a collision are resolved by the unit with the highest speed moving first, then if there's a tie they both move backwards until they are in a valid state
-- - Action Phase
-- - - Players select their targets and abilities (attacks, heals, special effects, etc.)
-- - - Moves all resolve in priority order, with the highest priority moving first. If there's a tie, the unit with the fastest speed goes first. If there is still a tie, both units act at the same time.
-
-- [ ] Build out damage calculation https://bulbapedia.bulbagarden.net/wiki/Damage#Generation_V_onward
-- [ ] Build out type damage calculation https://bulbapedia.bulbagarden.net/wiki/Type
-- [ ] Compile it to wasm32 unknown-unknown
-- [ ] Add Godot bindgen
-- [ ] If necessary, generate code based on methods. If adding to unreal, use an AOT compiler or even a wasm runtime.
-- [ ] Figure out how to make an AI pipeline using chatgpt for generating ideas/transforming things. E.g. converting pokemon types into abilities a unit can take.
-- [ ]
+Right now it's a WIP and not setup properly. This repo is more of a snapshot for ideas.
 
 ## Compiler Roadmap
 
