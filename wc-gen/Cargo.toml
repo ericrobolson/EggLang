@@ -1,0 +1,9 @@
+[package]
+name = "wc-gen"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+lisper = { git = "https://github.com/ericrobolson/Lisper.git", features = [
+    "load_directory",
+] }
